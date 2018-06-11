@@ -77,7 +77,11 @@ namespace Testing
             a->add( a->zsp, stackSize );
             a.GenEpilogue();
             
-            auto func = reinterpret_cast<BOOL( __fastcall * )(LPCWSTR)>(a->make());
+            void* ptr = VirtualAlloc( nullptr, 0x1000, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
+            a->relocCode( ptr );
+
+            auto func = reinterpret_cast<BOOL( __fastcall * )(LPCWSTR)>(ptr);
+
             BOOL b = func( filePath );
             /*Assert::IsTrue( b );
 
