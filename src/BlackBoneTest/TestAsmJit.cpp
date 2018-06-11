@@ -49,6 +49,9 @@ namespace Testing
             auto asmPtr = AsmFactory::GetAssembler();
             auto& a = *asmPtr;
 
+            a.EnableX64CallStack( false );
+            auto skip = a->newLabel();
+
             uint8_t writeBuf[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
             auto filePath = L"DummyFile_MultiCall.dat";
             DWORD bytes = 0;
@@ -56,21 +59,24 @@ namespace Testing
             AsmStackAllocator stack( a.assembler() );
             ALLOC_STACK_VAR( stack, handle, HANDLE );
 
-            auto skip = a->newLabel();
+            auto stackSize = stack.getTotalSize();
+            if (a.assembler()->getArch() == asmjit::kArchX64)
+                stackSize = Align( stackSize, 0x100 );      
 
             a.GenPrologue();
-            a->sub( a->zsp, stack.getTotalSize() );
+            a->sub( a->zsp, stackSize );
             a.GenCall( reinterpret_cast<uintptr_t>(&CreateFileW), { a->zcx, GENERIC_WRITE, 0x7, nullptr, CREATE_ALWAYS, 0, nullptr } );
+            a->mov( handle, a->zax );
             a->cmp( a->zax, reinterpret_cast<uintptr_t>(INVALID_HANDLE_VALUE) );
             a->je( skip );
-            a->mov( handle, a->zax );
             a.GenCall( reinterpret_cast<uintptr_t>(&WriteFile), { handle, writeBuf, sizeof( writeBuf ), &bytes, nullptr } );
             a->test( a->zax, a->zax );
             a->jz( skip );
             a.GenCall( reinterpret_cast<uintptr_t>(&CloseHandle), { handle } );
             a->bind( skip );
+            a->add( a->zsp, stackSize );
             a.GenEpilogue();
-           
+            
             auto func = reinterpret_cast<BOOL( __fastcall * )(LPCWSTR)>(a->make());
             BOOL b = func( filePath );
             Assert::IsTrue( b );
