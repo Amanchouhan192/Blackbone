@@ -65,8 +65,8 @@ namespace Testing
 
             a.GenPrologue();
             a->sub( a->zsp, stackSize );
-            /*a.GenCall( reinterpret_cast<uintptr_t>(&CreateFileW), { a->zcx, GENERIC_WRITE, 0x7, nullptr, CREATE_ALWAYS, 0, nullptr } );
-            a->mov( handle, a->zax );
+            a.GenCall( reinterpret_cast<uintptr_t>(&CreateFileW), { a->zcx, GENERIC_WRITE, 0x7, nullptr, CREATE_ALWAYS, 0, nullptr } );
+            /*a->mov( handle, a->zax );
             a->cmp( a->zax, reinterpret_cast<uintptr_t>(INVALID_HANDLE_VALUE) );
             a->je( skip );
             a.GenCall( reinterpret_cast<uintptr_t>(&WriteFile), { handle, writeBuf, sizeof( writeBuf ), &bytes, nullptr } );
